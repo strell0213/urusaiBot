@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using urusaiBot.DiscordFolder;
 
 namespace Program
@@ -13,7 +14,7 @@ namespace Program
             GetCommand();
         }
 
-        static void GetCommand()
+        static async Task GetCommand()
         {
             Console.WriteLine("Выберите действие:");
             Console.WriteLine("1. Включить бота");
@@ -27,6 +28,7 @@ namespace Program
                     StartDiscord();
                     break;
                 case "2":
+                    await _discord.StopBot();
                     break;
                 case "3":
                     break;
@@ -39,7 +41,7 @@ namespace Program
             GetCommand();
         }
 
-        static void StartDiscord()
+        static async Task StartDiscord()
         {
             if(_discord.key.Length == 0)
             {
@@ -48,9 +50,9 @@ namespace Program
                 string path = Console.ReadLine();
                 _discord.key = _discord.GetKey(path);
 
-                _discord.StartSettingBot();
+                await _discord.StartSettingBot();
             }
-            _discord.StartBot();
+            await _discord.StartBot();
 
             Console.Clear();
             Console.WriteLine("Бот успешно подключен!!\n");

@@ -17,12 +17,25 @@ namespace urusaiBot.DiscordFolder
 
         public DiscordClass() { }
 
+        public string GetKey(string url)
+        {
+            if (url.Length > 0)
+            {
+                StreamReader reader = new StreamReader(url);
+                GlobalSettings.key = reader.ReadToEnd();
+                reader.Close();
+                return GlobalSettings.key;
+            }
+            else return "";
+        }
+
         public async Task StartSettingBot()
         {
             DiscordSocketConfig config = new DiscordSocketConfig();
             config.GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent;
             client = new DiscordSocketClient(config);
             client.MessageReceived += CommandsHandler;
+            client.InteractionCreated += HandleButtonPress;
             //client.Log += window.Log;
 
             await client.LoginAsync(TokenType.Bot, key);
@@ -34,47 +47,58 @@ namespace urusaiBot.DiscordFolder
             botConnect = true;
         }
 
+        public async Task StopBot()
+        {
+            await client.StopAsync();
+            botConnect = false;
+        }
+
         private async Task CommandsHandler(SocketMessage message)
         {
-            if (!message.Author.IsBot)
-            {
-                if (message.Content == "хай")
-                {
-                    await message.Channel.SendMessageAsync($"Прив, {message.Author}");
-                }
-                //else if (message.Content.Contains("/play"))
-                //{
-                //    string mes = message.Content;
-                //    string urlpath = mes.Replace("/play", "");
-                //    urlpath.Trim();
-                //    if (urlpath != null && urlpath != "")
-                //    {
-                //        //string voiceid = message.
-                //        await message.Channel.SendMessageAsync($"Ваша ссылка - {urlpath}");
-                //        IVoiceChannel channel = null;
-                //        channel = channel ?? (message.Author as IGuildUser)?.VoiceChannel;
-                //        if (channel == null) { await message.Channel.SendMessageAsync("User must be in a voice channel, or a voice channel must be passed as an argument."); return; }
+            if (message.Author.IsBot) return;
 
-                //        var audioClient = await channel.ConnectAsync();
-                //    }
-                //    else
-                //    {
-                //        await message.Channel.SendMessageAsync("Укажите ссылку");
-                //    }
-                //}
+            switch (message.Content)
+            {
+                case "хай":
+                    await message.Channel.SendMessageAsync($"Прив, {message.Author}");
+                    break;
+                case "!start":
+                    await GetStartButtons(message);
+                    break;
+                default:
+                    await message.Channel.SendMessageAsync($"Ты ввел что-то не то...");
+                    break;
             }
         }
 
-        public string GetKey(string url)
+        private async Task HandleButtonPress(SocketInteraction interaction)
         {
-            if (url.Length > 0)
+            if (interaction is not SocketMessageComponent component) return;
+
+            switch (component.Data.CustomId)
             {
-                StreamReader reader = new StreamReader(url);
-                GlobalSettings.key = reader.ReadToEnd();
-                reader.Close();
-                return GlobalSettings.key;
+                case "authYa":
+                    break;
+                default:
+                    break;
             }
-            else return "";
+        }
+
+        private async Task GetStartButtons(SocketMessage message)
+        {
+            string msg = "Добро пожаловать в urusaiBot!\nДля начала необходимо сгенерировать токен!\n";
+
+            var button = new ButtonBuilder()
+            {
+                Label = "Сгенерировать токен",
+                CustomId = "authYa",
+                Style = ButtonStyle.Primary
+            };
+
+            var builder = new ComponentBuilder().WithButton(button);
+
+            await message.Channel.SendMessageAsync(msg, components: builder.Build());
+            return;
         }
     }
 }
